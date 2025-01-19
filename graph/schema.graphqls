@@ -1,0 +1,36 @@
+"""
+The root `Query` type must contain at least one field for introspection to work in the playground.
+"""
+type Query {
+  placeholder: String
+}
+
+"""
+The `Time` type represents the current time, including both a
+Unix epoch timestamp and a string timestamp.
+"""
+type Time {
+  unix: Int!
+  timestamp: String!
+}
+
+"""
+The `Subscription` type defines all subscriptions available
+to clients. You can use Schema Directives to restrict access
+as needed.
+"""
+type Subscription {
+  messageAdded(chatRoomID: ID!): Message!
+
+  messageAdded: Message!
+}
+
+"""
+The `Message` type represents a chat message with an ID, text content,
+and the timestamp when it was created.
+"""
+type Message {
+  id: ID!
+  text: String!
+  createdAt: String!
+}
