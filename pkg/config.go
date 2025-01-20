@@ -23,13 +23,14 @@ type Kafka struct {
 	SecurityProtocol string `yaml:"security_protocol"`
 	SASLMechanism    string `yaml:"sasl_mechanism"`
 	RegistryUrl      string `yaml:"schema_registry_url"`
+	Topic            string `yaml:"topic"`
+	GroupId          string `yaml:"group_id"`
 }
 
 type DB struct {
-	User     string `yaml:"username"`
-	Host     string `yaml:"host"`
-	Database string `yaml:"database"`
-	SSLMode  string `yaml:"ssl_mode"`
+	Username        string   `yaml:"username"`
+	Hosts           []string `yaml:"hosts"`
+	LocalDataCenter string   `yaml:"localDataCenter"`
 }
 
 func (c *Config) LoadConfig(file io.Reader) error {
