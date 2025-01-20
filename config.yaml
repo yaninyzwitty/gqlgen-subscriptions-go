@@ -1,0 +1,10 @@
+---
+server:
+  port: 3000
+kafka:
+  username: witty-tenant
+  bootstrap_servers: kafka-aws-eucentral1.streaming.datastax.com:9093
+  security_protocol: SASL_SSL
+  sasl_mechanism: PLAIN
+  schema_registry_url: https://kafka-aws-eucentral1.streaming.datastax.com:8081
+

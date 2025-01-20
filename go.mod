@@ -6,6 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.17.63
 	github.com/segmentio/kafka-go v0.4.47
 	github.com/vektah/gqlparser/v2 v2.5.21
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
