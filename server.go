@@ -21,19 +21,18 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 	"github.com/yaninyzwitty/gqlgen-subscriptions-go/database"
 	"github.com/yaninyzwitty/gqlgen-subscriptions-go/graph"
+	"github.com/yaninyzwitty/gqlgen-subscriptions-go/helpers"
 	"github.com/yaninyzwitty/gqlgen-subscriptions-go/kafka"
 	"github.com/yaninyzwitty/gqlgen-subscriptions-go/pkg"
 	"github.com/yaninyzwitty/gqlgen-subscriptions-go/sonyflake"
 )
 
 var (
-	cfg        pkg.Config
-	password   string
-	dbPassword string
+	cfg pkg.Config
 )
 
 func main() {
-	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
 
 	file, err := os.Open("config.yaml")
@@ -58,20 +57,15 @@ func main() {
 	mux := chi.NewRouter()
 	mux.Use(middleware.Logger)
 
-	err = godotenv.Load()
-	if err != nil {
-		slog.Error("error loading .env file", "error", err)
+	if err := godotenv.Load(); err != nil {
+		slog.Error("Failed to load .env file", "error", err)
 		os.Exit(1)
 	}
 
-	if s := os.Getenv("KAFKA_PASSWORD"); password != "" {
-		password = s
+	password := helpers.GetEnvOrDefault("KAFKA_PASSWORD", "")
+	dbPassword := helpers.GetEnvOrDefault("SCYLLA_PASSWORD", "")
 
-	}
-	if t := os.Getenv("SCYLLA_PASSWORD"); password != "" {
-		dbPassword = t
-
-	}
+	slog.Info("Environment variables loaded successfully", "KAFKA_PASSWORD", password != "", "SCYLLA_PASSWORD", dbPassword != "")
 
 	kafkaConfig := &kafka.KafkaInputConfig{
 		Username:         cfg.Kafka.Username,

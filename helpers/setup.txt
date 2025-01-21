@@ -1,10 +1,18 @@
-CREATE TABLE IF NOT EXISTS users (
+	// Set up tables
+	createUsersTableStmt := `
+CREATE TABLE IF NOT EXISTS products_keyspace.users (
     id BIGINT PRIMARY KEY,      -- Corresponds to User.id
     name TEXT,                  -- Corresponds to User.name
     email TEXT                  -- Corresponds to User.email
 );
+`
+	if err := session.Query(createUsersTableStmt).Exec(); err != nil {
+		slog.Error("Failed to create 'users' table", "error", err)
+		os.Exit(1)
+	}
 
-CREATE TABLE IF NOT EXISTS users_outbox (
+	createUsersOutboxTableStmt := `
+CREATE TABLE IF NOT EXISTS products_keyspace.users_outbox (
     user_id BIGINT,                      -- Partition key: groups events by user
     event_id UUID,                       -- Clustering key: uniquely identifies events
     published BOOLEAN,                   -- Clustering key: helps sort by published status
@@ -12,18 +20,28 @@ CREATE TABLE IF NOT EXISTS users_outbox (
     payload TEXT,                        -- JSON payload with event details
     created_at TIMESTAMP,                -- Timestamp when the event was recorded
     PRIMARY KEY ((user_id), published, event_id)
-) WITH CLUSTERING ORDER BY (published ASC, event_id DESC); -- Sorts first by `published`, then by `event_id`
+) WITH CLUSTERING ORDER BY (published ASC, event_id DESC);
+`
+	if err := session.Query(createUsersOutboxTableStmt).Exec(); err != nil {
+		slog.Error("Failed to create 'users_outbox' table", "error", err)
+		os.Exit(1)
+	}
 
-
-
-CREATE TABLE IF NOT EXISTS chat_rooms (
+	createChatRoomsTableStmt := `
+CREATE TABLE IF NOT EXISTS products_keyspace.chat_rooms (
     id BIGINT PRIMARY KEY,               -- Corresponds to Room.id
     name TEXT,                           -- Corresponds to Room.name
     created_at TIMESTAMP,                -- Corresponds to Room.createdAt
     participants SET<BIGINT>             -- Stores IDs of users (User.id)
 );
+`
+	if err := session.Query(createChatRoomsTableStmt).Exec(); err != nil {
+		slog.Error("Failed to create 'chat_rooms' table", "error", err)
+		os.Exit(1)
+	}
 
-CREATE TABLE IF NOT EXISTS chat_rooms_outbox (
+	createChatRoomsOutboxTableStmt := `
+CREATE TABLE IF NOT EXISTS products_keyspace.chat_rooms_outbox (
     room_id BIGINT,                      -- Partition key: groups events by chat room
     event_id UUID,                       -- Clustering key: uniquely identifies events
     published BOOLEAN,                   -- Clustering key: helps sort by published status
@@ -31,14 +49,15 @@ CREATE TABLE IF NOT EXISTS chat_rooms_outbox (
     payload TEXT,                        -- JSON payload with event details
     created_at TIMESTAMP,                -- Timestamp when the event was recorded
     PRIMARY KEY ((room_id), published, event_id)
-) WITH CLUSTERING ORDER BY (published ASC, event_id DESC); -- Sorts first by `published`, then by `event_id`
+) WITH CLUSTERING ORDER BY (published ASC, event_id DESC);
+`
+	if err := session.Query(createChatRoomsOutboxTableStmt).Exec(); err != nil {
+		slog.Error("Failed to create 'chat_rooms_outbox' table", "error", err)
+		os.Exit(1)
+	}
 
-
-
-
-
-
-CREATE TABLE IF NOT EXISTS message_by_room (
+	createMessagesByRoomStmt := `
+CREATE TABLE IF NOT EXISTS products_keyspace.message_by_room (
     room_id BIGINT,                      -- Corresponds to Message.roomId
     chat_id BIGINT,                      -- Corresponds to Message.id
     sender_id BIGINT,                    -- Corresponds to User.id (Message.sender)
@@ -46,14 +65,25 @@ CREATE TABLE IF NOT EXISTS message_by_room (
     timestamp TIMESTAMP,                 -- Corresponds to Message.timestamp
     PRIMARY KEY ((room_id), chat_id)     -- Allows fetching messages by room
 ) WITH CLUSTERING ORDER BY (chat_id DESC);
+`
+	if err := session.Query(createMessagesByRoomStmt).Exec(); err != nil {
+		slog.Error("Failed to create 'message_by_room' table", "error", err)
+		os.Exit(1)
+	}
 
-CREATE TABLE IF NOT EXISTS message_by_room_outbox (
+	createMessagesByRoomOutboxStmt := `
+CREATE TABLE IF NOT EXISTS products_keyspace.message_by_room_outbox (
     room_id BIGINT,                      -- Partition key: groups events by room
     published BOOLEAN,                   -- Clustering key: helps sort by published status
     event_id UUID,                       -- Clustering key: uniquely identifies events
-    chat_id BIGINT,                      -- Corresponds to `message_by_room.chat_id`
+    chat_id BIGINT,                      -- Corresponds to message_by_room.chat_id
     event_type TEXT,                     -- Type of event (e.g., "MESSAGE_SENT")
     payload TEXT,                        -- JSON payload with event details
     created_at TIMESTAMP,                -- Timestamp when the event was recorded
     PRIMARY KEY ((room_id), published, event_id)
-) WITH CLUSTERING ORDER BY (published ASC, event_id DESC); -- Sorts by `published` and `event_id`
+) WITH CLUSTERING ORDER BY (published ASC, event_id DESC);
+`
+	if err := session.Query(createMessagesByRoomOutboxStmt).Exec(); err != nil {
+		slog.Error("Failed to create 'message_by_room_outbox' table", "error", err)
+		os.Exit(1)
+	}

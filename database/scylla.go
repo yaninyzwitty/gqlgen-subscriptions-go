@@ -27,6 +27,7 @@ func NewScyllaDB() DatabaseMethods {
 
 func (db *ScyllaDB) Connect(ctx context.Context, cfg *DBConfig) (*gocql.Session, error) {
 	cluster := gocql.NewCluster(cfg.Hosts...)
+
 	cluster.Authenticator = gocql.PasswordAuthenticator{
 		Username: cfg.Username,
 		Password: cfg.Password,

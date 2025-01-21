@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/segmentio/kafka-go"
@@ -77,6 +78,8 @@ func (c *KafkaInputConfig) CreateKafkaWriter(ctx context.Context, topic string) 
 		return nil, fmt.Errorf("failed to create Kafka writer")
 	}
 
+	slog.Info("Kafka writer created succesfully")
+
 	return writer, nil
 }
 
@@ -102,6 +105,8 @@ func (c *KafkaInputConfig) CreateKafkaReader(topic, groupID string) (*kafka.Read
 	if reader == nil {
 		return nil, fmt.Errorf("failed to create Kafka reader")
 	}
+
+	slog.Info("Kafka reader created succesfully")
 
 	return reader, nil
 }
