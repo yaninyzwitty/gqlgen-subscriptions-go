@@ -8,6 +8,7 @@ require (
 	github.com/gocql/gocql v1.7.0
 	github.com/joho/godotenv v1.5.1
 	github.com/segmentio/kafka-go v0.4.47
+	github.com/sony/sonyflake v1.2.0
 	github.com/vektah/gqlparser/v2 v2.5.21
 	gopkg.in/yaml.v2 v2.4.0
 )

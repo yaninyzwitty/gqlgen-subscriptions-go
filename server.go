@@ -23,6 +23,7 @@ import (
 	"github.com/yaninyzwitty/gqlgen-subscriptions-go/graph"
 	"github.com/yaninyzwitty/gqlgen-subscriptions-go/kafka"
 	"github.com/yaninyzwitty/gqlgen-subscriptions-go/pkg"
+	"github.com/yaninyzwitty/gqlgen-subscriptions-go/sonyflake"
 )
 
 var (
@@ -44,6 +45,13 @@ func main() {
 
 	if err := cfg.LoadConfig(file); err != nil {
 		slog.Error("failed to load config", "error", err)
+		os.Exit(1)
+	}
+
+	// initialize sonyflake
+	err = sonyflake.InitSonyFlake()
+	if err != nil {
+		slog.Error("failed to initialize sonyflake", "error", err)
 		os.Exit(1)
 	}
 
