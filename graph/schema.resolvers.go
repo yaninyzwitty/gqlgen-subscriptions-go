@@ -6,9 +6,14 @@ package graph
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strconv"
 
+	"github.com/gocql/gocql"
 	"github.com/yaninyzwitty/gqlgen-subscriptions-go/graph/model"
+	"github.com/yaninyzwitty/gqlgen-subscriptions-go/helpers"
+	"github.com/yaninyzwitty/gqlgen-subscriptions-go/sonyflake"
 )
 
 // Sender is the resolver for the sender field.
@@ -28,7 +33,70 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, name string, particip
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, name string, email string) (*model.User, error) {
-	panic(fmt.Errorf("not implemented: CreateUser - createUser"))
+	if name == "" {
+		return nil, fmt.Errorf("name cannot be empty")
+	}
+	if email == "" {
+		return nil, fmt.Errorf("email cannot be empty")
+	}
+	// Generate the next ID using Sonyflake
+	nextID, err := sonyflake.GenerateID()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate next ID: %w", err)
+	}
+
+	// Construct the payload as a JSON string
+	payload, err := json.Marshal(map[string]interface{}{
+		"id":    nextID,
+		"name":  name,
+		"email": email,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal payload: %w", err)
+	}
+
+	// Generate a TimeUUID for the event
+	eventID := gocql.TimeUUID()
+
+	// CQL batch statement for inserting into users and users_outbox
+	insertToTablesBatch := `
+		BEGIN BATCH
+		INSERT INTO products_keyspace.users (id, name, email) VALUES (?, ?, ?);
+		INSERT INTO products_keyspace.users_outbox (
+			published, 
+			user_id, 
+			event_id, 
+			event_type, 
+			payload, 
+			created_at
+		) VALUES (
+			false, 
+			?, 
+			?, 
+			?, 
+			?, 
+			toTimestamp(now())
+		);
+		APPLY BATCH;
+	`
+
+	// Execute the batch statement
+	err = r.Session.Query(
+		insertToTablesBatch,
+		nextID, name, email, // For the `users` table
+		nextID, eventID, "user_created", string(payload), // For the `users_outbox` table
+	).Exec()
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute batch query: %w", err)
+	}
+
+	// Return the created user object
+	return &model.User{
+		ID:    helpers.UintToString(nextID),
+		Name:  name,
+		Email: email,
+	}, nil
 }
 
 // GetMessages is the resolver for the getMessages field.
@@ -43,7 +111,20 @@ func (r *queryResolver) GetRoom(ctx context.Context, roomID string) (*model.Room
 
 // GetUser is the resolver for the getUser field.
 func (r *queryResolver) GetUser(ctx context.Context, userID string) (*model.User, error) {
-	panic(fmt.Errorf("not implemented: GetUser - getUser"))
+	userIDInt, err := strconv.ParseUint(userID, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse userID: %w", err)
+	}
+
+	query := `SELECT id, name, email FROM products_keyspace.users WHERE id = ?`
+	var user model.User
+
+	err = r.Session.Query(query, userIDInt).Scan(&user.ID, &user.Name, &user.Email)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user: %w", err)
+	}
+	return &user, nil
+
 }
 
 // Participants is the resolver for the participants field.
