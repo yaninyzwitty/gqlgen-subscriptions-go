@@ -1,36 +1,37 @@
-"""
-The root `Query` type must contain at least one field for introspection to work in the playground.
-"""
 type Query {
-  placeholder: String
+  getMessages(roomId: ID!, limit: Int, offset: Int): [Message!]!
+  getRoom(roomId: ID!): Room!
+  getUser(userId: ID!): User!
 }
 
-"""
-The `Time` type represents the current time, including both a
-Unix epoch timestamp and a string timestamp.
-"""
-type Time {
-  unix: Int!
+type Mutation {
+  sendMessage(roomId: ID!, senderId: ID!, content: String!): Message!
+  createRoom(name: String!, participants: [ID!]!): Room!
+  createUser(name: String!, email: String!): User!
+}
+
+type Subscription {
+  messageAdded(roomId: ID!): Message!
+}
+
+type Message {
+  id: ID! # Matches 'chat_id' in the DB
+  roomId: ID! # Matches 'room_id' in the DB
+  sender: User! # 'sender_id' corresponds to the ID in the 'users' table
+  content: String! # Matches 'text' in the DB
   timestamp: String!
 }
 
-"""
-The `Subscription` type defines all subscriptions available
-to clients. You can use Schema Directives to restrict access
-as needed.
-"""
-type Subscription {
-  messageAdded(chatRoomID: ID!): Message!
-
-  messageAdded: Message!
+type Room {
+  id: ID! # Matches 'id' in 'chat_rooms'
+  name: String! # Matches 'name' in 'chat_rooms'
+  participants: [User!]! # Matches 'participants' in 'chat_rooms'
+  createdAt: String! # Matches 'created_at' in 'chat_rooms'
+  messages: [Message!]! # Will fetch from 'message_by_room'
 }
 
-"""
-The `Message` type represents a chat message with an ID, text content,
-and the timestamp when it was created.
-"""
-type Message {
-  id: ID!
-  text: String!
-  createdAt: String!
+type User {
+  id: ID! # Matches 'id' in the 'users' table
+  name: String! # Matches 'name' in the 'users' table
+  email: String! # Matches 'email' in the 'users' table
 }

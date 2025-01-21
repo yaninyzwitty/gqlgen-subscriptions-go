@@ -6,89 +6,78 @@ package graph
 
 import (
 	"context"
-	"time"
+	"fmt"
 
 	"github.com/yaninyzwitty/gqlgen-subscriptions-go/graph/model"
 )
 
-// Placeholder is the resolver for the placeholder field.
-func (r *queryResolver) Placeholder(ctx context.Context) (*string, error) {
-	message := "Hello witty"
-	return &message, nil
+// Sender is the resolver for the sender field.
+func (r *messageResolver) Sender(ctx context.Context, obj *model.Message) (*model.User, error) {
+	panic(fmt.Errorf("not implemented: Sender - sender"))
+}
+
+// SendMessage is the resolver for the sendMessage field.
+func (r *mutationResolver) SendMessage(ctx context.Context, roomID string, senderID string, content string) (*model.Message, error) {
+	panic(fmt.Errorf("not implemented: SendMessage - sendMessage"))
+}
+
+// CreateRoom is the resolver for the createRoom field.
+func (r *mutationResolver) CreateRoom(ctx context.Context, name string, participants []string) (*model.Room, error) {
+	panic(fmt.Errorf("not implemented: CreateRoom - createRoom"))
+}
+
+// CreateUser is the resolver for the createUser field.
+func (r *mutationResolver) CreateUser(ctx context.Context, name string, email string) (*model.User, error) {
+	panic(fmt.Errorf("not implemented: CreateUser - createUser"))
+}
+
+// GetMessages is the resolver for the getMessages field.
+func (r *queryResolver) GetMessages(ctx context.Context, roomID string, limit *int32, offset *int32) ([]*model.Message, error) {
+	panic(fmt.Errorf("not implemented: GetMessages - getMessages"))
+}
+
+// GetRoom is the resolver for the getRoom field.
+func (r *queryResolver) GetRoom(ctx context.Context, roomID string) (*model.Room, error) {
+	panic(fmt.Errorf("not implemented: GetRoom - getRoom"))
+}
+
+// GetUser is the resolver for the getUser field.
+func (r *queryResolver) GetUser(ctx context.Context, userID string) (*model.User, error) {
+	panic(fmt.Errorf("not implemented: GetUser - getUser"))
+}
+
+// Participants is the resolver for the participants field.
+func (r *roomResolver) Participants(ctx context.Context, obj *model.Room) ([]*model.User, error) {
+	panic(fmt.Errorf("not implemented: Participants - participants"))
+}
+
+// Messages is the resolver for the messages field.
+func (r *roomResolver) Messages(ctx context.Context, obj *model.Room) ([]*model.Message, error) {
+	panic(fmt.Errorf("not implemented: Messages - messages"))
 }
 
 // MessageAdded is the resolver for the messageAdded field.
-func (r *subscriptionResolver) MessageAdded(ctx context.Context) (<-chan *model.Message, error) {
-	messageChannel := make(chan *model.Message, 1)
-
-	// Simulate sending a message to the channel (in a real app, this might be based on a Pub/Sub system)
-	go func() {
-		defer close(messageChannel)
-		message := &model.Message{
-			ID:        "1",
-			Text:      "Hello, world!",
-			CreatedAt: time.Now().Format(time.RFC3339),
-		}
-		messageChannel <- message
-	}()
-
-	return messageChannel, nil
+func (r *subscriptionResolver) MessageAdded(ctx context.Context, roomID string) (<-chan *model.Message, error) {
+	panic(fmt.Errorf("not implemented: GetUser - getUser"))
 }
+
+// Message returns MessageResolver implementation.
+func (r *Resolver) Message() MessageResolver { return &messageResolver{r} }
+
+// Mutation returns MutationResolver implementation.
+func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+// Room returns RoomResolver implementation.
+func (r *Resolver) Room() RoomResolver { return &roomResolver{r} }
+
 // Subscription returns SubscriptionResolver implementation.
 func (r *Resolver) Subscription() SubscriptionResolver { return &subscriptionResolver{r} }
 
+type messageResolver struct{ *Resolver }
+type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type roomResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-/*
-	func (r *subscriptionResolver) CurrentTime(ctx context.Context) (<-chan *model.Time, error) {
-	// First you'll need to `make()` your channel. Use your type here!
-	ch := make(chan *model.Time)
-
-	// You can (and probably should) handle your channels in a central place outside of `schema.resolvers.go`.
-	// For this example we'll simply use a Goroutine with a simple loop.
-	go func() {
-		// Handle deregistration of the channel here. Note the `defer`
-		defer close(ch)
-
-		for {
-			// In our example we'll send the current time every second.
-			time.Sleep(1 * time.Second)
-			fmt.Println("Tick")
-
-			// Prepare your object.
-			currentTime := time.Now()
-			t := &model.Time{
-				UnixTime:  int32(currentTime.Unix()),
-				TimeStamp: currentTime.Format(time.RFC3339),
-			}
-
-			// The subscription may have got closed due to the client disconnecting.
-			// Hence we do send in a select block with a check for context cancellation.
-			// This avoids goroutine getting blocked forever or panicking,
-			select {
-			case <-ctx.Done(): // This runs when context gets cancelled. Subscription closes.
-				fmt.Println("Subscription Closed")
-				// Handle deregistration of the channel here. `close(ch)`
-				return // Remember to return to end the routine.
-
-			case ch <- t: // This is the actual send.
-				// Our message went through, do nothing
-			}
-		}
-	}()
-
-	// We return the channel and no error.
-	return ch, nil
-}
-*/
