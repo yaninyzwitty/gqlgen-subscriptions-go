@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/gocql/gocql"
 	"github.com/yaninyzwitty/gqlgen-subscriptions-go/graph/model"
@@ -28,7 +29,89 @@ func (r *mutationResolver) SendMessage(ctx context.Context, roomID string, sende
 
 // CreateRoom is the resolver for the createRoom field.
 func (r *mutationResolver) CreateRoom(ctx context.Context, name string, participants []string) (*model.Room, error) {
-	panic(fmt.Errorf("not implemented: CreateRoom - createRoom"))
+	// Validate inputs
+	if name == "" || len(participants) == 0 {
+		return nil, fmt.Errorf("name and participants cannot be empty")
+	}
+
+	// Generate a unique room ID using Sonyflake
+	roomID, err := sonyflake.GenerateID()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate room ID: %w", err)
+	}
+
+	now := time.Now()
+
+	// Parse participant IDs
+	var participantsID []uint64
+	for _, participantID := range participants {
+		parsedID, err := strconv.ParseUint(participantID, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse participant ID: %w", err)
+		}
+		participantsID = append(participantsID, parsedID)
+	}
+
+	var users []*model.User
+
+	for _, participantid := range participantsID {
+		users = append(users, &model.User{
+			ID: helpers.UintToString(participantid),
+		})
+	}
+
+	// Prepare payload for the outbox table
+	payload, err := json.Marshal(map[string]interface{}{
+		"id":           roomID,
+		"name":         name,
+		"created_at":   now,
+		"participants": participantsID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal payload: %w", err)
+	}
+
+	// Generate a unique event ID for the outbox table
+	eventID := gocql.TimeUUID()
+
+	// Define CQL batch query for inserting data into tables
+	insertToTablesBatch := `
+	BEGIN BATCH
+	INSERT INTO products_keyspace.chat_rooms (id, name, created_at, participants) VALUES (?, ?, ?, ?);
+	INSERT INTO products_keyspace.chat_rooms_outbox (
+		published, 
+		room_id, 
+		event_id, 
+		event_type, 
+		payload, 
+		created_at
+	) VALUES (
+		false, 
+		?, 
+		?, 
+		?, 
+		?, 
+		?
+	);
+	APPLY BATCH;
+	`
+
+	// Execute batch query
+	if err := r.Session.Query(
+		insertToTablesBatch,
+		roomID, name, now, participantsID, // Chat room table
+		roomID, eventID, "chat_room_created", string(payload), now, // Outbox table
+	).Exec(); err != nil {
+		return nil, fmt.Errorf("failed to create chat room: %w", err)
+	}
+
+	// Return the created room
+	return &model.Room{
+		ID:           helpers.UintToString(roomID),
+		Name:         name,
+		CreatedAt:    now.String(),
+		Participants: users,
+	}, nil
 }
 
 // CreateUser is the resolver for the createUser field.
@@ -129,12 +212,85 @@ func (r *queryResolver) GetUser(ctx context.Context, userID string) (*model.User
 
 // Participants is the resolver for the participants field.
 func (r *roomResolver) Participants(ctx context.Context, obj *model.Room) ([]*model.User, error) {
-	panic(fmt.Errorf("not implemented: Participants - participants"))
+
+	if obj == nil {
+		return nil, fmt.Errorf("room is nil")
+	}
+
+	if len(obj.Participants) == 0 {
+		return nil, fmt.Errorf("no participants in the room")
+	}
+
+	// Parse participant IDs from Room
+	var participantsID []uint64
+	for _, participant := range obj.Participants {
+		parsedID, err := strconv.ParseUint(participant.ID, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse participant ID: %w", err)
+		}
+		participantsID = append(participantsID, parsedID)
+	}
+
+	// If no participant IDs, return early
+	if len(participantsID) == 0 {
+		return nil, fmt.Errorf("no valid participant IDs found in the room")
+	}
+
+	// Fetch participants using a single query with IN clause
+	query := "SELECT id, name, email FROM products_keyspace.users WHERE id IN ?"
+	iter := r.Session.Query(query, participantsID).Iter()
+
+	var participants []*model.User
+	var userID uint64
+	var name, email string
+
+	// Scan rows and construct User objects
+	for iter.Scan(&userID, &name, &email) {
+		participants = append(participants, &model.User{
+			ID:    helpers.UintToString(userID), // Convert uint64 to string
+			Name:  name,
+			Email: email,
+		})
+	}
+
+	// Check for iteration errors
+	if err := iter.Close(); err != nil {
+		return nil, fmt.Errorf("failed to fetch participants: %w", err)
+	}
+
+	return participants, nil
 }
 
 // Messages is the resolver for the messages field.
 func (r *roomResolver) Messages(ctx context.Context, obj *model.Room) ([]*model.Message, error) {
-	panic(fmt.Errorf("not implemented: Messages - messages"))
+	if obj == nil {
+		return nil, fmt.Errorf("room is nil ")
+	}
+
+	selectMessagesQuery := `
+	SELECT chat_id, sender_id, text, timestamp
+	FROM products_keyspace.message_by_room
+	WHERE room_id = ?
+	ORDER BY chat_id DESC;
+`
+
+	iter := r.Session.Query(selectMessagesQuery, obj.ID).Iter()
+	var messages []*model.Message
+	var chatID, senderID uint64
+	var text string
+	var timestamp time.Time
+	for iter.Scan(&chatID, &senderID, &text, &timestamp) {
+		messages = append(messages, &model.Message{
+			ID:        helpers.UintToString(chatID),
+			Sender:    &model.User{ID: helpers.UintToString(senderID)},
+			Timestamp: timestamp.String(),
+			RoomID:    obj.ID,
+			Content:   text,
+		})
+	}
+
+	return messages, nil
+
 }
 
 // MessageAdded is the resolver for the messageAdded field.
@@ -162,3 +318,5 @@ type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type roomResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
+
+// 226900632156565505, 226900717351268353, 226900745302110209, 226900788906094593, 226900817444139009, 226900879335288833
