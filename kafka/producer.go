@@ -66,9 +66,10 @@ func (c *KafkaInputConfig) CreateKafkaWriter(ctx context.Context, topic string) 
 
 	// Create Kafka writer
 	writer := kafka.NewWriter(kafka.WriterConfig{
-		Brokers:      []string{c.BootstrapServers},
-		Topic:        topic,
-		Async:        true,
+		Brokers: []string{c.BootstrapServers},
+		Topic:   topic,
+		Async:   true,
+
 		Dialer:       dialer,
 		RequiredAcks: int(kafka.RequireOne),
 		Balancer:     &kafka.LeastBytes{},

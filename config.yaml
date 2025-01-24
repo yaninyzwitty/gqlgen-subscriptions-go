@@ -3,7 +3,7 @@ server:
   port: 3000
 kafka:
   username: witty-cluster
-  topic: messages_topic
+  topic: messages_topic 
   group_id: messages_topic_group_id
   bootstrap_servers: kafka-aws-eucentral1.streaming.datastax.com:9093
   security_protocol: SASL_SSL

@@ -115,6 +115,7 @@ func main() {
 
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
 		Session: session,
+		Reader:  reader,
 	}}))
 	srv.AddTransport(transport.Websocket{})
 	srv.AddTransport(transport.Options{})
@@ -149,6 +150,23 @@ func main() {
 		}
 	}()
 
+	go func() {
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				if err := helpers.ProcessMessages(context.Background(), session, writer); err != nil {
+					slog.Error("failed to process messages", "error", err)
+					os.Exit(1)
+				}
+
+			case <-stopCH:
+				return
+			}
+		}
+	}()
 	<-stopCH
 	slog.Info("shutting down the server...")
 	if err := server.Shutdown(shutdownCtx); err != nil {
