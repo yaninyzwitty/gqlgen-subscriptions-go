@@ -87,3 +87,6 @@ CREATE TABLE IF NOT EXISTS products_keyspace.message_by_room_outbox (
 		slog.Error("Failed to create 'message_by_room_outbox' table", "error", err)
 		os.Exit(1)
 	}
+
+
+

@@ -2,17 +2,17 @@
 server:
   port: 3000
 kafka:
-  username: witty-tenant
-  topic: some_topic
-  group_id: some_topic_group_id
+  username: witty-cluster
+  topic: messages_topic
+  group_id: messages_topic_group_id
   bootstrap_servers: kafka-aws-eucentral1.streaming.datastax.com:9093
   security_protocol: SASL_SSL
   sasl_mechanism: PLAIN
-  schema_registry_url: https://kafka-aws-eucentral1.streaming.datastax.com:8081
+  schema_registry_url:  https://kafka-aws-eucentral1.streaming.datastax.com:8081
 database:
   username: scylla
   hosts:
-    - "node-0.aws-me-south-1.4d88cd47f4a59f788c19.clusters.scylla.cloud"
-    - "node-1.aws-me-south-1.4d88cd47f4a59f788c19.clusters.scylla.cloud"
-    - "node-2.aws-me-south-1.4d88cd47f4a59f788c19.clusters.scylla.cloud"
+    - "node-0.aws-me-south-1.461be90e3177a6f2560b.clusters.scylla.cloud"
+    - "node-1.aws-me-south-1.461be90e3177a6f2560b.clusters.scylla.cloud"
+    - "node-2.aws-me-south-1.461be90e3177a6f2560b.clusters.scylla.cloud"
   localDataCenter: "AWS_ME_SOUTH_1"
