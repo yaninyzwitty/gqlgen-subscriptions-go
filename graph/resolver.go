@@ -1,6 +1,9 @@
 package graph
 
-import "github.com/gocql/gocql"
+import (
+	"github.com/gocql/gocql"
+	"github.com/segmentio/kafka-go"
+)
 
 // This file will not be regenerated automatically.
 //
@@ -8,4 +11,5 @@ import "github.com/gocql/gocql"
 
 type Resolver struct {
 	Session *gocql.Session
+	Reader  *kafka.Reader
 }

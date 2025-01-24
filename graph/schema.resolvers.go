@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"time"
 
@@ -437,7 +438,39 @@ func (r *roomResolver) Messages(ctx context.Context, obj *model.Room) ([]*model.
 
 // MessageAdded is the resolver for the messageAdded field.
 func (r *subscriptionResolver) MessageAdded(ctx context.Context, roomID string) (<-chan *model.Message, error) {
-	panic(fmt.Errorf("not implemented: GetUser - getUser"))
+	messages := make(chan *model.Message, 100)
+
+	go func() {
+		defer close(messages)
+		defer slog.Info("kafka consumer for room", "room_id", roomID)
+
+		for {
+			select {
+			case <-ctx.Done():
+				slog.Error("Context canceled for room:", "roomID", roomID)
+				return
+			default:
+				msg, err := r.Reader.ReadMessage(ctx)
+				if err != nil {
+					slog.Error("Error reading message:", "error", err)
+					continue
+				}
+
+				message := &model.Message{
+					ID:      string(msg.Key),   // Use Kafka key as message ID
+					RoomID:  roomID,            // Room ID
+					Content: string(msg.Value), // Kafka message value
+				}
+
+				messages <- message
+
+			}
+		}
+
+	}()
+
+	return messages, nil
+
 }
 
 // Message returns MessageResolver implementation.
