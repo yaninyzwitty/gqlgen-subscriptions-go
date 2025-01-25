@@ -438,39 +438,57 @@ func (r *roomResolver) Messages(ctx context.Context, obj *model.Room) ([]*model.
 
 // MessageAdded is the resolver for the messageAdded field.
 func (r *subscriptionResolver) MessageAdded(ctx context.Context, roomID string) (<-chan *model.Message, error) {
-	messages := make(chan *model.Message, 100)
+	messages := make(chan *model.Message, 100) // Buffered channel
 
 	go func() {
-		defer close(messages)
-		defer slog.Info("kafka consumer for room", "room_id", roomID)
+		defer close(messages) // Close the channel when the goroutine ends
+		slog.Info("Kafka consumer started for room", "roomID", roomID)
 
 		for {
 			select {
 			case <-ctx.Done():
-				slog.Error("Context canceled for room:", "roomID", roomID)
+				slog.Info("Context canceled for room", "roomID", roomID)
+				// Gracefully handle context cancellation
 				return
 			default:
+				// Read the next message from Kafka
 				msg, err := r.Reader.ReadMessage(ctx)
 				if err != nil {
-					slog.Error("Error reading message:", "error", err)
+					slog.Error("Error reading message from Kafka", "error", err, "roomID", roomID)
 					continue
 				}
 
-				message := &model.Message{
-					ID:      string(msg.Key),   // Use Kafka key as message ID
-					RoomID:  roomID,            // Room ID
-					Content: string(msg.Value), // Kafka message value
+				// Define a struct for unmarshaling the Kafka message
+				var otherMessage model.OtherMessage
+
+				// Unmarshal the Kafka message into the struct
+				if err := json.Unmarshal(msg.Value, &otherMessage); err != nil {
+					slog.Error("Failed to unmarshal message into struct", "error", err, "message_value", string(msg.Value))
+					continue
 				}
 
-				messages <- message
+				// Map the unmarshaled data to the GraphQL model.Message
+				message := &model.Message{
+					ID:        fmt.Sprintf("%v", otherMessage.ID), // Ensure ID is formatted correctly
+					RoomID:    otherMessage.RoomID,
+					Content:   otherMessage.Content,
+					Sender:    &model.User{ID: otherMessage.Sender},
+					Timestamp: otherMessage.Timestamp,
+				}
 
+				// Send the message to the subscription channel
+				select {
+				case messages <- message:
+					// Successfully sent the message
+				case <-ctx.Done():
+					slog.Info("Context canceled while sending message to channel", "roomID", roomID)
+					return
+				}
 			}
 		}
-
 	}()
 
 	return messages, nil
-
 }
 
 // Message returns MessageResolver implementation.
