@@ -1,2 +1,4 @@
 .env
 kafka.properties
+witty_cluster-token.json
+secure-connect.zip

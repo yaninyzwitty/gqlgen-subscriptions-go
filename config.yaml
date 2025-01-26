@@ -16,3 +16,8 @@ database:
     - "node-1.aws-me-south-1.461be90e3177a6f2560b.clusters.scylla.cloud"
     - "node-2.aws-me-south-1.461be90e3177a6f2560b.clusters.scylla.cloud"
   localDataCenter: "AWS_ME_SOUTH_1"
+astra:
+  username: token
+  token: token #remove this
+  path: ./secure-connect.zip
+  timeout: 40
