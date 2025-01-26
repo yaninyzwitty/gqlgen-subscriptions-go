@@ -55,5 +55,7 @@ CREATE TABLE IF NOT EXISTS message_by_room_outbox (
     event_type TEXT,                     -- Type of event (e.g., "MESSAGE_SENT")
     payload TEXT,                        -- JSON payload with event details
     created_at TIMESTAMP,                -- Timestamp when the event was recorded
-    PRIMARY KEY ((room_id), published, event_id)
-) WITH CLUSTERING ORDER BY (published ASC, event_id DESC); -- Sorts by `published` and `event_id`
+    PRIMARY KEY ((room_id), event_id)
+) WITH CLUSTERING ORDER BY (room_id ASC, event_id DESC); -- Sorts by `published` and `event_id`
+
+

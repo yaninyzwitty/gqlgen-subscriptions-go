@@ -64,8 +64,9 @@ func main() {
 
 	password := helpers.GetEnvOrDefault("KAFKA_PASSWORD", "")
 	dbPassword := helpers.GetEnvOrDefault("SCYLLA_PASSWORD", "")
+	token := helpers.GetEnvOrDefault("ASTRA_TOKEN", "")
 
-	slog.Info("Environment variables loaded successfully", "KAFKA_PASSWORD", password != "", "SCYLLA_PASSWORD", dbPassword != "")
+	slog.Info("Environment variables loaded successfully", "KAFKA_PASSWORD", password != "", "SCYLLA_PASSWORD", dbPassword != "", "ASTRA_TOKEN", token != "")
 
 	kafkaConfig := &kafka.KafkaInputConfig{
 		Username:         cfg.Kafka.Username,
@@ -76,22 +77,38 @@ func main() {
 		Password:         password,
 	}
 
-	databaseConfig := database.DBConfig{
-		Username:        cfg.Database.Username,
-		Hosts:           cfg.Database.Hosts,
-		LocalDataCenter: cfg.Database.LocalDataCenter,
-		Password:        dbPassword,
+	astraCfg := &database.AstraConfig{
+		Username: cfg.AstraDB.Username,
+		Path:     cfg.AstraDB.Path,
+		Token:    token,
 	}
 
-	dbInstance := database.NewScyllaDB()
+	db := database.NewAstraDB()
 
-	// create a session
-	session, err := dbInstance.Connect(ctx, &databaseConfig)
+	session, err := db.Connect(ctx, astraCfg, time.Duration(cfg.AstraDB.Timeout)*time.Second)
 	if err != nil {
 		slog.Error("error connecting to database", "error", err)
 		os.Exit(1)
+
 	}
 	defer session.Close()
+
+	// databaseConfig := database.DBConfig{
+	// 	Username:        cfg.Database.Username,
+	// 	Hosts:           cfg.Database.Hosts,
+	// 	LocalDataCenter: cfg.Database.LocalDataCenter,
+	// 	Password:        dbPassword,
+	// }
+
+	// dbInstance := database.NewScyllaDB()
+
+	// // create a session
+	// session, err := dbInstance.Connect(ctx, &databaseConfig)
+	// if err != nil {
+	// 	slog.Error("error connecting to database", "error", err)
+	// 	os.Exit(1)
+	// }
+	// defer session.Close()
 
 	kafkaInstance := kafka.NewKafka(kafkaConfig)
 

@@ -11,10 +11,17 @@ type Config struct {
 	Server   Server `yaml:"server"`
 	Kafka    Kafka  `yaml:"kafka"`
 	Database DB     `yaml:"database"`
+	AstraDB  ASTRA  `yaml:"astra"`
 }
 
 type Server struct {
 	Port int `yaml:"port"`
+}
+
+type ASTRA struct {
+	Path     string `yaml:"path"`
+	Username string `yaml:"username"`
+	Timeout  int    `yaml:"timeout"`
 }
 
 type Kafka struct {
