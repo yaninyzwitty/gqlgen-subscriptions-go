@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS products_keyspace.message_by_room_outbox (
     PRIMARY KEY ((room_id), event_id)
 ) WITH CLUSTERING ORDER BY (published ASC, event_id DESC);
 
-CREATE INDEX message_by_room_outbox_published ON message_by_room_outbox (published);
+CREATE INDEX message_by_room_outbox_published ON message_by_room_outbox (published) using 'StorageAttachedIndexing';
 
 
 `
