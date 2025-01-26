@@ -1,7 +1,9 @@
-package helpers
+package tests
 
 import (
 	"testing"
+
+	"github.com/yaninyzwitty/gqlgen-subscriptions-go/helpers"
 )
 
 func TestUintToString(t *testing.T) {
@@ -16,7 +18,7 @@ func TestUintToString(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		result := UintToString(test.input)
+		result := helpers.UintToString(test.input)
 		if result != test.expected {
 			t.Errorf("UintToString(%d) = %s; want %s", test.input, result, test.expected)
 		}

@@ -1,8 +1,10 @@
-package helpers
+package tests
 
 import (
 	"os"
 	"testing"
+
+	"github.com/yaninyzwitty/gqlgen-subscriptions-go/helpers"
 )
 
 func TestGetEnvOrDefault(t *testing.T) {
@@ -23,7 +25,7 @@ func TestGetEnvOrDefault(t *testing.T) {
 			os.Unsetenv(test.key)
 		}
 
-		result := GetEnvOrDefault(test.key, test.defaultValue)
+		result := helpers.GetEnvOrDefault(test.key, test.defaultValue)
 		if result != test.expected {
 			t.Errorf("GetEnvOrDefault(%s, %s) = %s; want %s", test.key, test.defaultValue, result, test.expected)
 		}
