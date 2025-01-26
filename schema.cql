@@ -59,3 +59,4 @@ CREATE TABLE IF NOT EXISTS message_by_room_outbox (
 ) WITH CLUSTERING ORDER BY (room_id ASC, event_id DESC); -- Sorts by `published` and `event_id`
 
 
+CREATE CUSTOM INDEX message_by_room_outbox_published ON message_by_room_outbox (published) using 'StorageAttachedIndex';
