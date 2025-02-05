@@ -19,5 +19,5 @@ database:
 astra:
   username: token
   token: token #remove this
-  path: ./secure-connect.zip
+  path: ./app/secure-connect.zip
   timeout: 40
