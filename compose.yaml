@@ -1,6 +1,6 @@
 services:
   gqlgen-subscriptions-go:
-    # image: yaninyzwitty/gqlgen-subscriptions-go:latest
+    image: yaninyzwitty/gqlgen-subscriptions-go:latest
     build: 
       context: .
       dockerfile: Dockerfile
