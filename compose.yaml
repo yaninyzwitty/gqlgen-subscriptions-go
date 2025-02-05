@@ -1,0 +1,30 @@
+services:
+  gqlgen-subscriptions-go:
+    # image: yaninyzwitty/gqlgen-subscriptions-go:latest
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    configs:
+      - source: my_config
+        target: ./my_config.yaml
+    volumes:
+      - ./secure-connect.zip:/app/secure-connect.zip
+    networks:
+      - private_network
+
+
+
+configs:
+  my_config:
+    file: config.yaml  
+networks:
+  private_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "10.0.0.0/19"
+          gateway: "10.0.0.1"

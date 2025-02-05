@@ -17,7 +17,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/joho/godotenv"
 	"github.com/vektah/gqlparser/v2/ast"
 	"github.com/yaninyzwitty/gqlgen-subscriptions-go/database"
 	"github.com/yaninyzwitty/gqlgen-subscriptions-go/graph"
@@ -35,7 +34,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
 
-	file, err := os.Open("config.yaml")
+	file, err := os.Open("my_config.yaml")
 	if err != nil {
 		slog.Error("failed to open config.yaml", "error", err)
 		os.Exit(1)
@@ -57,10 +56,10 @@ func main() {
 	mux := chi.NewRouter()
 	mux.Use(middleware.Logger)
 
-	if err := godotenv.Load(); err != nil {
-		slog.Error("Failed to load .env file", "error", err)
-		os.Exit(1)
-	}
+	// if err := godotenv.Load(); err != nil {
+	// 	slog.Error("Failed to load .env file", "error", err)
+	// 	os.Exit(1)
+	// }
 
 	password := helpers.GetEnvOrDefault("KAFKA_PASSWORD", "")
 	dbPassword := helpers.GetEnvOrDefault("SCYLLA_PASSWORD", "")

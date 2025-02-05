@@ -41,6 +41,8 @@ func ProcessMessages(ctx context.Context, session *gocql.Session, writer *kafka.
 			Value: []byte(payload),
 		}
 
+		slog.Info("Processing message", "eventID", eventID)
+
 		// Publish the message to Kafka
 		if err := writer.WriteMessages(ctx, kafkaMessage); err != nil {
 			return fmt.Errorf("failed to publish message to Kafka: %w", err)
@@ -68,7 +70,3 @@ func ProcessMessages(ctx context.Context, session *gocql.Session, writer *kafka.
 
 	return nil
 }
-
-// users-227263068692869121, 227263213010481153, 227263253712007169
-// rooms- 227263386235236353, 227263437556740097, 227263480875511809, 227263506896973825
-// messages-
